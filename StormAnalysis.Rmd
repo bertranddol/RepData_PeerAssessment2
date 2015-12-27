@@ -1,0 +1,119 @@
+---
+title: "Population & Economical Impact of US Storms since 1953"
+output: html_document
+---
+
+
+Analysis by type of storm on the Population ( Fatalisties and Injuries) as well as the economical impact.
+This analysis could guide legislator and elected officials at global and local level to spend tax-payer money in the most way to alleviate the most relevant risks.
+
+Some risks, may have health population issues when other may have more of an economical impact, being aware of those risks and their consequences through analysis like this should influence public policies and align them with the public interest.
+
+One the fundamental question would be whether economical impacts are similar to the danger to the population in terms of fatalities and injuries.
+
+
+# Data Processing:
+
+## Loading & Preparing the data
+````{r}
+wd <- setwd("/Users/bdolimier/persodev/RepData_PeerAssessment2")
+rawstorm <- read.csv("repdata-data-StormData.csv" , header=TRUE, sep = ",", na.strings = "NA"  )
+#Replacing abbriviation by their full name - TSTM -> THUNDERSTORM
+tpstorm <- sapply( rawstorm , function( EVTYPE ) gsub("TSTM", "THUNDERSTORM", EVTYPE))
+
+#Assuring fields 23 to 25 are numeric
+dfstorm <- data.frame(tpstorm)
+dfstorm[, 23] <- as.numeric(as.character( tpstorm[,23] ))
+dfstorm[, 24] <- as.numeric(as.character( tpstorm[,24] ))
+dfstorm[, 25] <- as.numeric(as.character( tpstorm[,25] ))
+
+```
+
+## Storm impact on Fatalities
+````{r}
+# Aggregating fatalities data by Storm Type
+fatalAgg <- aggregate( dfstorm$FATALITIES , by=list( toupper(dfstorm$EVTYPE)) , FUN=sum)
+fatalTot <- sum(fatalAgg$x)
+tmp <- subset( fatalAgg , subset=( x > fatalTot/100) )
+deadlyStorm <- tmp[ order(-tmp[,2]), ]
+
+plot( deadlyStorm$x, type="b" , ylim=range( 0 :fatalTot/2 ), 
+      ann=T, axes=F, xlab="" , ylab="Total Fatalities", cex.lab=1, lwd=2)
+      
+box(lwd=1)
+axis( 2 , c(0,2000,4000,6000) )
+title("Storm type impact on Pop Fatalities", cex.main = 1.5,   font.main= 4, col.main= "black",
+      cex.sub = .8,   font.sub = 4)
+
+hlabelScale<-c(0:13)
+hlabelType <- deadlyStorm$Group.1
+
+text( hlabelScale+1 , -500 , srt=45, adj=1,
+          labels=hlabelType,
+          col="black",
+          xpd=T, cex=0.9)
+````
+
+## Storm impact on Injuries
+````{r}
+injurAgg <- aggregate( dfstorm$INJURIES , by=list( toupper(dfstorm$EVTYPE)) , FUN=sum)
+injurTot <- sum(injurAgg$x)
+tmp <- subset( injurAgg , subset=( x > injurTot/100) )
+injurStorm <- tmp[ order(-tmp[,2]), ]
+
+plot( injurStorm$x, type="b" , ylim=range( 0 :injurTot*.75 ), 
+      ann=T, axes=F, xlab="" , ylab="Total injurities", cex.lab=1, lwd=2)
+      
+box(lwd=1)
+axis( 2 , c(0,25000,50000,75000,150000) )
+title("Storm type impact on Pop injuries", cex.main = 1.5,   font.main= 4, col.main= "black",
+      cex.sub = .8,   font.sub = 4)
+
+maxi <- nrow(injurStorm)-1
+hlabelScale<-c(0:maxi )
+hlabelType <- injurStorm$Group.1
+
+text( hlabelScale+1 , y=-8000 ,srt=45, adj=1,
+          labels=hlabelType,
+          xpd=T, cex=0.9)
+````
+
+## Storm economical impact
+````{r}
+# Creating a COST field in Billion Dollars by unify accros Unit the PROPDMG field
+dfstorm <- transform( dfstorm , COST=ifelse(PROPDMGEXP=='K', PROPDMG/1000000, 
+                  ifelse(PROPDMGEXP=='M' , PROPDMG/1000 ,
+                  ifelse(PROPDMGEXP=='B' , PROPDMG ,
+                         PROPDMG/1000000 ) ) ))
+
+costAgg <- aggregate( dfstorm$COST , by=list( toupper(dfstorm$EVTYPE)) , FUN=sum)
+costTot <- sum(costAgg$x)
+tmp <- subset( costAgg , subset=( x > costTot/100) )
+costStorm <- tmp[ order(-tmp[,2]), ]
+
+plot( costStorm$x, type="b" , ylim=range( 0 :costTot/2 ), 
+      ann=T, axes=F, xlab="" , ylab="Total Economical Impact", cex.lab=1, lwd=2)
+      
+box(lwd=1)
+axis( 2 , c(0,50,100,150,200) )
+title("Economical Impact analysis by Storm type (in $Billions)", cex.main = 1.5,   font.main= 4, col.main= "black",
+      cex.sub = .8,   font.sub = 4)
+
+maxi <- nrow(costStorm)-1
+hlabelScale<-c(0:maxi )
+hlabelType <- costStorm$Group.1
+
+text( hlabelScale+1 , y=-10 ,srt=45, adj=1,
+          labels=hlabelType,
+          xpd=T, cex=0.9)
+
+````
+
+# Result:
+
+Analysis shows that Tornadoes are by far the most dangerous storm for the safety of the US population as a whole.
+
+Not surprisingly due to their more predictable nature, floods have a lesser impact on the population when damages are more extensive.
+
+
+< end >
